@@ -167,17 +167,21 @@ def create_employee(tenant, index, driver):
 
 
 login_account = get_login_account("./account")
-tenant_index = 168
-employee_index = 335
-tenant_name = "CLX" + str(tenant_index)
-chrome_driver = log_in_tenant(login_account, tenant_name, chrome_driver)
-
-i = 0
+tenant_index = 171
+employee_index = 341
 employee_amount = 2
-while i < employee_amount:
-    employee_index = employee_index + i
-    chrome_driver = create_employee(tenant_name, employee_index, chrome_driver)
-    i += 1
+i = 0
 
-chrome_driver = log_out(chrome_driver)
+while tenant_index < 177:
+    tenant_name = "CLX" + str(tenant_index)
+    chrome_driver = log_in_tenant(login_account, tenant_name, chrome_driver)
+    while i < employee_amount:
+        employee_index = employee_index + i
+        chrome_driver = create_employee(tenant_name, employee_index, chrome_driver)
+        i += 1
+    chrome_driver = log_out(chrome_driver)
+    i = 0
+    tenant_index += 1
+    employee_index += 1
+
 chrome_driver.close()
