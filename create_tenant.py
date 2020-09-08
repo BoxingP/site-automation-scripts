@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
@@ -30,8 +31,10 @@ def log_in_admin(account, driver):
 
     driver.find_element_by_id("lims_buttonID").click()
 
+    wait.until(EC.presence_of_element_located((By.XPATH, "//div[@id='login']/form/div[@class='form-group']")))
+
     select_tenant = Select(driver.find_element_by_xpath("//select[@name='tenantSelect']"))
-    select_tenant.select_by_value("13")
+    select_tenant.select_by_visible_text("PLATFORM ADMIN")
     driver.find_element_by_xpath("//input[@name='submit'][@type='submit']").click()
 
     wait.until(EC.title_contains("PFS | Home"))
