@@ -5,7 +5,6 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 
 chrome_driver = webdriver.Chrome()
-tenant_name = "CLX170"
 
 
 def get_login_account(path):
@@ -79,6 +78,12 @@ def create_tenant(tenant, driver):
 
 login_account = get_login_account("./account")
 chrome_driver = log_in_admin(login_account, chrome_driver)
-chrome_driver = create_tenant(tenant_name, chrome_driver)
+
+tenant_index = 173
+while tenant_index < 177:
+    tenant_name = "CLX" + str(tenant_index)
+    chrome_driver = create_tenant(tenant_name, chrome_driver)
+    tenant_index += 1
+
 chrome_driver = log_out(chrome_driver)
 chrome_driver.close()
