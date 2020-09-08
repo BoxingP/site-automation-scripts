@@ -5,7 +5,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 
 chrome_driver = webdriver.Chrome()
-tenant_name = "CLX169"
+tenant_name = "CLX170"
 
 
 def get_login_account(path):
@@ -17,7 +17,8 @@ def get_login_account(path):
     return {'username': username, 'password': password}
 
 
-def create_tenant(account, tenant, driver):
+def log_in_admin(account, driver):
+    wait = WebDriverWait(driver, 420)
     driver.get("http://corelimslite.thermofisher.cn/")
 
     username_id = driver.find_element_by_id("lims_userNameID")
@@ -34,8 +35,22 @@ def create_tenant(account, tenant, driver):
     select_tenant.select_by_value("13")
     driver.find_element_by_xpath("//input[@name='submit'][@type='submit']").click()
 
-    wait = WebDriverWait(driver, 420)
     wait.until(EC.title_contains("PFS | Home"))
+
+    return driver
+
+
+def log_out(driver):
+    wait = WebDriverWait(driver, 420)
+    driver.get("http://corelimslite.thermofisher.cn/login?cmd=logout&entityType=LIMS")
+
+    wait.until(EC.title_contains("PFS | Login"))
+
+    return driver
+
+
+def create_tenant(tenant, driver):
+    wait = WebDriverWait(driver, 420)
 
     driver.get(
         "http://corelimslite.thermofisher.cn/708646210/corelims?cmd=clone&entityType=PLATFORM%20ACCOUNT&entityId=17437965")
@@ -59,10 +74,11 @@ def create_tenant(account, tenant, driver):
 
     wait.until(EC.title_contains("PFS | PLATFORM ACCOUNT Details"))
 
-    driver.get("http://corelimslite.thermofisher.cn/login?cmd=logout&entityType=LIMS")
+    return driver
 
 
 login_account = get_login_account("./account")
-create_tenant(login_account, tenant_name, chrome_driver)
-
+chrome_driver = log_in_admin(login_account, chrome_driver)
+chrome_driver = create_tenant(tenant_name, chrome_driver)
+chrome_driver = log_out(chrome_driver)
 chrome_driver.close()
