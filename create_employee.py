@@ -5,7 +5,6 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from selenium import webdriver
 from selenium.webdriver import ActionChains
-from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
@@ -38,7 +37,7 @@ def log_in_tenant(account, tenant, driver):
 
     driver.find_element_by_id("lims_buttonID").click()
 
-    wait.until(EC.presence_of_element_located((By.XPATH, "//input[@name='submit'][@type='submit']")))
+    time.sleep(2)
 
     select_tenant = Select(driver.find_element_by_xpath("//div[@id='login']/form/*/select[@name='tenantSelect']"))
     select_tenant.select_by_visible_text(tenant)
