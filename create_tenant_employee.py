@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
@@ -22,7 +21,7 @@ def get_file_info(path):
 
 def log_in_tenant(account, tenant, driver):
     wait = WebDriverWait(driver, 420)
-    driver.get("http://corelimslite.thermofisher.cn/")
+    driver.get("http://corelimslite.thermofisher.cn/corelims")
 
     username_id = driver.find_element_by_id("lims_userNameID")
     username_id.clear()
@@ -34,7 +33,7 @@ def log_in_tenant(account, tenant, driver):
 
     driver.find_element_by_id("lims_buttonID").click()
 
-    time.sleep(3)
+    driver.get("http://corelimslite.thermofisher.cn/login")
 
     select_tenant = Select(driver.find_element_by_xpath("//select[@name='tenantSelect']"))
     select_tenant.select_by_visible_text(tenant)
