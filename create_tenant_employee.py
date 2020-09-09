@@ -13,7 +13,7 @@ chrome_driver = webdriver.Chrome()
 
 
 def get_file_info(path):
-    file = open(path, "r")
+    file = open(path, 'r', encoding='UTF-8')
     data = json.load(file)
     file.close()
     return data
@@ -53,7 +53,7 @@ def log_out(driver):
     return driver
 
 
-def create_tenant(tenant, driver):
+def create_tenant(tenant, info, driver):
     wait = WebDriverWait(driver, 420)
 
     driver.get(
@@ -65,15 +65,15 @@ def create_tenant(tenant, driver):
     input_base_account_barcode = driver.find_element_by_id("17429591")
     input_base_account_barcode.send_keys(Keys.CONTROL + "a")
     input_base_account_barcode.send_keys(Keys.BACK_SPACE)
-    input_base_account_barcode.send_keys("ACT3@CI_LOOPBACK")
+    input_base_account_barcode.send_keys(info['base-account-barcode'])
 
     input_alias = driver.find_element_by_id("17429593")
     input_alias.send_keys(Keys.CONTROL + "a")
     input_alias.send_keys(Keys.BACK_SPACE)
     input_alias.send_keys(tenant)
 
-    select_tomcat = Select(driver.find_element_by_id("associatedEntityIdentifier|17429833"))
-    select_tomcat.select_by_value("17430067")
+    Select(driver.find_element_by_id("associatedEntityIdentifier|17429833")).select_by_visible_text(
+        info['tomcat-service'])
     driver.find_element_by_xpath("//input[@type='button'][@value='Save']").click()
 
     wait.until(EC.title_contains("PFS | PLATFORM ACCOUNT Details"))
@@ -81,7 +81,7 @@ def create_tenant(tenant, driver):
     return driver
 
 
-def create_employee(tenant, index, driver):
+def create_employee(tenant, index, info, driver):
     wait = WebDriverWait(driver, 420)
 
     driver.get(
@@ -96,119 +96,35 @@ def create_employee(tenant, index, driver):
     first_name = driver.find_element_by_xpath("//input[@id='6130503']")
     first_name.send_keys(user)
 
-    last_name = driver.find_element_by_xpath("//input[@id='6130505']")
-    last_name.send_keys("corelims")
+    driver.find_element_by_xpath("//input[@id='6130505']").send_keys(info['last-name'])
 
     username = driver.find_element_by_xpath("//input[@id='6130509']")
     username.send_keys(employee)
 
-    password = driver.find_element_by_xpath("//input[@id='password']")
-    password.send_keys("abc123")
+    driver.find_element_by_xpath("//input[@id='password']").send_keys(info['password'])
+    driver.find_element_by_xpath("//input[@id='password_confirm']").send_keys(info['password'])
 
-    password_confirm = driver.find_element_by_xpath("//input[@id='password_confirm']")
-    password_confirm.send_keys("abc123")
-
-    select_location = Select(driver.find_element_by_xpath("//select[@id='17322279']"))
-    select_location.select_by_value("上海")
-
-    select_role = Select(driver.find_element_by_xpath("//select[@id='17322280']"))
-    select_role.select_by_value("系统管理员")
+    Select(driver.find_element_by_xpath("//select[@id='17322279']")).select_by_value(info['location'])
+    Select(driver.find_element_by_xpath("//select[@id='17322280']")).select_by_value(info['role'])
 
     expire = driver.find_element_by_xpath("//input[@id='ts_17322281']")
-    now = datetime.now() + relativedelta(months=+3)
+    now = datetime.now() + relativedelta(months=+info['expire-month'])
     expire.send_keys(now.strftime("%m/%d/%Y"))
 
-    select_data_generator = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|5101124']/option[text()='DATA GENERATOR']")
-    select_data_viewer = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|5101124']/option[text()='DATA VIEWER']")
-    select_default = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|5101124']/option[text()='DEFAULT']")
-    select_view_all = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|5101124']/option[text()='VIEW-ALL']")
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_data_generator).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_data_viewer).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_default).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_view_all).key_up(Keys.CONTROL).perform()
+    for access_level in info['access-level']:
+        select = driver.find_element_by_xpath(
+            "//select[@id='associatedEntityIdentifier|5101124']/option[text()='" + access_level + "']")
+        ActionChains(driver).key_down(Keys.CONTROL).click(select).key_up(Keys.CONTROL).perform()
 
-    select_1 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_batch_material_usage_query_application']")
-    select_2 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_consumable_lowlimit_report_application']")
-    select_3 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_consumable_management_application']")
-    select_4 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_consumable_receive_management_application']")
-    select_5 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_homepage']")
-    select_6 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_inventory_check_application']")
-    select_7 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_inventory_query_application']")
-    select_8 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_location_management_application']")
-    select_9 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_qa_review_mgmt_application']")
-    select_10 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_sample_disposal_request_mgmt_application']")
-    select_11 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_sample_disposal_request_review_application']")
-    select_12 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_sample_receive_management_application']")
-    select_13 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_sample_registration_mgmt_application']")
-    select_14 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_sample_report_mgmt_application']")
-    select_15 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_sample_source_mgmt_application']")
-    select_16 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_samplebatch_usage_query_application']")
-    select_17 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_stock_in_confirmation_management_application']")
-    select_18 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_stock_in_request_review_application']")
-    select_19 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_stock_in_request_submission_application']")
-    select_20 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_stock_out_confirmation_management_application']")
-    select_21 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_stock_out_request_review_application']")
-    select_22 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_stock_out_request_submission_application']")
-    select_23 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='bex_validity_period_management_application']")
-    select_24 = driver.find_element_by_xpath(
-        "//select[@id='associatedEntityIdentifier|6240792']/option[text()='ci_app_eln']")
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_1).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_2).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_3).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_4).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_5).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_6).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_7).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_8).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_9).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_10).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_11).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_12).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_13).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_14).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_15).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_16).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_17).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_18).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_19).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_20).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_21).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_22).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_23).key_up(Keys.CONTROL).perform()
-    ActionChains(driver).key_down(Keys.CONTROL).click(select_24).key_up(Keys.CONTROL).perform()
+    for application in info['applications']:
+        select = driver.find_element_by_xpath(
+            "//select[@id='associatedEntityIdentifier|6240792']/option[text()='" + application + "']")
+        ActionChains(driver).key_down(Keys.CONTROL).click(select).key_up(Keys.CONTROL).perform()
 
-    select_default_app = Select(driver.find_element_by_xpath("//select[@id='associatedEntityIdentifier|6240793']"))
-    select_default_app.select_by_visible_text("bex_homepage")
-
-    select_dashboard = Select(driver.find_element_by_xpath("//select[@id='associatedEntityIdentifier|7234414']"))
-    select_dashboard.select_by_visible_text("bex_homepage_dashboard")
+    Select(driver.find_element_by_xpath("//select[@id='associatedEntityIdentifier|6240793']")).select_by_visible_text(
+        info['default-application'])
+    Select(driver.find_element_by_xpath("//select[@id='associatedEntityIdentifier|7234414']")).select_by_visible_text(
+        info['home-dashboard'])
 
     print(employee)
 
@@ -221,12 +137,12 @@ def create_employee(tenant, index, driver):
 def create_tenants(account, info, driver):
     driver = log_in_tenant(account, "PLATFORM ADMIN", driver)
 
-    tenant_index = info['creation']['tenant']['start-point']
-    tenant_index_limit = tenant_index + info['creation']['tenant']['number']
+    tenant_index = info['start-point']
+    tenant_index_limit = tenant_index + info['number']
 
     while tenant_index < tenant_index_limit:
         tenant_name = "CLX" + str(tenant_index)
-        driver = create_tenant(tenant_name, driver)
+        driver = create_tenant(tenant_name, info, driver)
         tenant_index += 1
 
     driver = log_out(driver)
@@ -246,7 +162,7 @@ def create_employees(account, info, driver):
         driver = log_in_tenant(account, tenant_name, driver)
         while i < employee_amount:
             employee_index = employee_index + i
-            driver = create_employee(tenant_name, employee_index, driver)
+            driver = create_employee(tenant_name, employee_index, info['creation']['employee'], driver)
             i += 1
         driver = log_out(driver)
         i = 0
@@ -256,6 +172,6 @@ def create_employees(account, info, driver):
 
 login_account = get_file_info("./account.json")
 creation_info = get_file_info("./creation.json")
-chrome_driver = create_tenants(login_account['account']['admin'], creation_info, chrome_driver)
+chrome_driver = create_tenants(login_account['account']['admin'], creation_info['creation']['tenant'], chrome_driver)
 create_employees(login_account['account']['admin'], creation_info, chrome_driver)
 chrome_driver.close()
