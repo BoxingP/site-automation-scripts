@@ -1,4 +1,4 @@
-
+import json
 import time
 from datetime import datetime
 
@@ -13,13 +13,11 @@ from selenium.webdriver.support.wait import WebDriverWait
 chrome_driver = webdriver.Chrome()
 
 
-def get_login_account(path):
+def get_file_info(path):
     file = open(path, "r")
-    lines = file.readlines()
-    username = lines[0].rstrip()
-    password = lines[1].rstrip()
+    data = json.load(file)
     file.close()
-    return {'username': username, 'password': password}
+    return data
 
 
 def log_in_tenant(account, tenant, driver):
@@ -166,15 +164,17 @@ def create_employee(tenant, index, driver):
     return driver
 
 
-login_account = get_login_account("./account")
-tenant_index = 171
-employee_index = 341
-employee_amount = 2
+login_account = get_file_info("./account.json")
+creation_info = get_file_info("./creation.json")
+tenant_index = creation_info['creation']['tenant']['start-point']
+tenant_index_limit = tenant_index + creation_info['creation']['tenant']['number']
+employee_index = creation_info['creation']['employee']['start-point']
+employee_amount = creation_info['creation']['employee']['number-each-tenant']
 i = 0
 
-while tenant_index < 177:
+while tenant_index < tenant_index_limit:
     tenant_name = "CLX" + str(tenant_index)
-    chrome_driver = log_in_tenant(login_account, tenant_name, chrome_driver)
+    chrome_driver = log_in_tenant(login_account['account']['admin'], tenant_name, chrome_driver)
     while i < employee_amount:
         employee_index = employee_index + i
         chrome_driver = create_employee(tenant_name, employee_index, chrome_driver)

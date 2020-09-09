@@ -1,3 +1,5 @@
+import json
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -8,16 +10,14 @@ from selenium.webdriver.support.wait import WebDriverWait
 chrome_driver = webdriver.Chrome()
 
 
-def get_login_account(path):
+def get_file_info(path):
     file = open(path, "r")
-    lines = file.readlines()
-    username = lines[0].rstrip()
-    password = lines[1].rstrip()
+    data = json.load(file)
     file.close()
-    return {'username': username, 'password': password}
+    return data
 
 
-def log_in_admin(account, driver):
+def log_in_tenant(account, tenant, driver):
     wait = WebDriverWait(driver, 420)
     driver.get("http://corelimslite.thermofisher.cn/")
 
@@ -34,7 +34,7 @@ def log_in_admin(account, driver):
     wait.until(EC.presence_of_element_located((By.XPATH, "//div[@id='login']/form/div[@class='form-group']")))
 
     select_tenant = Select(driver.find_element_by_xpath("//select[@name='tenantSelect']"))
-    select_tenant.select_by_visible_text("PLATFORM ADMIN")
+    select_tenant.select_by_visible_text(tenant)
     driver.find_element_by_xpath("//input[@name='submit'][@type='submit']").click()
 
     wait.until(EC.title_contains("PFS | Home"))
@@ -79,11 +79,14 @@ def create_tenant(tenant, driver):
     return driver
 
 
-login_account = get_login_account("./account")
-chrome_driver = log_in_admin(login_account, chrome_driver)
+login_account = get_file_info("./account.json")
+chrome_driver = log_in_tenant(login_account['account']['admin'], "PLATFORM ADMIN", chrome_driver)
 
-tenant_index = 173
-while tenant_index < 177:
+creation_info = get_file_info("./creation.json")
+tenant_index = creation_info['creation']['tenant']['start-point']
+tenant_index_limit = tenant_index + creation_info['creation']['tenant']['number']
+
+while tenant_index < tenant_index_limit:
     tenant_name = "CLX" + str(tenant_index)
     chrome_driver = create_tenant(tenant_name, chrome_driver)
     tenant_index += 1
