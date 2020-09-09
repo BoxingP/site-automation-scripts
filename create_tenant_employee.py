@@ -9,6 +9,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 
+time_started = datetime.utcnow()
+
 chrome_driver = webdriver.Chrome()
 
 
@@ -175,3 +177,7 @@ creation_info = get_file_info("./creation.json")
 chrome_driver = create_tenants(login_account['account']['admin'], creation_info['creation']['tenant'], chrome_driver)
 create_employees(login_account['account']['admin'], creation_info, chrome_driver)
 chrome_driver.close()
+
+time_ended = datetime.utcnow()
+total_time = (time_ended - time_started).total_seconds()
+print('Total time is %ss.' % round(total_time))
