@@ -3,7 +3,6 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 from selenium import webdriver
-from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
@@ -17,6 +16,18 @@ NEED_CREATE_EMPLOYEE = True
 chrome_driver = webdriver.Chrome()
 
 
+def input_text_value(driver, select, info):
+    textbox = driver.find_element_by_xpath("//*[@id='" + select + "']")
+    textbox.send_keys(Keys.CONTROL + "a")
+    textbox.send_keys(Keys.BACK_SPACE)
+    textbox.send_keys(info)
+
+
+def select_option(driver, select, info):
+    for option in info:
+        Select(driver.find_element_by_xpath("//select[@id='" + select + "']")).select_by_visible_text(option)
+
+
 def get_file_info(path):
     file = open(path, 'r', encoding='UTF-8')
     data = json.load(file)
@@ -28,14 +39,8 @@ def log_in_tenant(account, tenant, url, driver):
     wait = WebDriverWait(driver, 420)
     driver.get(url + "corelims")
 
-    username_id = driver.find_element_by_id("lims_userNameID")
-    username_id.clear()
-    username_id.send_keys(account["username"])
-
-    password_id = driver.find_element_by_id("lims_passwordID")
-    password_id.clear()
-    password_id.send_keys(account["password"])
-
+    input_text_value(driver, "lims_userNameID", account["username"])
+    input_text_value(driver, "lims_passwordID", account["password"])
     driver.find_element_by_id("lims_buttonID").click()
 
     driver.get(url + "login")
@@ -63,21 +68,10 @@ def create_tenant(tenant, info, url, driver):
 
     driver.get(url + "708646210/corelims?cmd=clone&entityType=PLATFORM%20ACCOUNT&entityId=17437965")
 
-    input_name = driver.find_element_by_id("name")
-    input_name.send_keys(tenant)
-
-    input_base_account_barcode = driver.find_element_by_id("17429591")
-    input_base_account_barcode.send_keys(Keys.CONTROL + "a")
-    input_base_account_barcode.send_keys(Keys.BACK_SPACE)
-    input_base_account_barcode.send_keys(info['base-account-barcode'])
-
-    input_alias = driver.find_element_by_id("17429593")
-    input_alias.send_keys(Keys.CONTROL + "a")
-    input_alias.send_keys(Keys.BACK_SPACE)
-    input_alias.send_keys(tenant)
-
-    Select(driver.find_element_by_id("associatedEntityIdentifier|17429833")).select_by_visible_text(
-        info['tomcat-service'])
+    input_text_value(driver, "name", tenant)
+    input_text_value(driver, "17429591", info['base-account-barcode'])
+    input_text_value(driver, "17429593", tenant)
+    select_option(driver, "associatedEntityIdentifier|17429833", info['tomcat-service'])
 
     if NEED_CREATE_TENANT:
         driver.find_element_by_xpath("//input[@type='button'][@value='Save']").click()
@@ -96,41 +90,21 @@ def create_employee(tenant, index, info, url, driver):
     wait.until(EC.title_contains("PFS | Create New EMPLOYEE"))
 
     user = 'user' + str(index)
+    input_text_value(driver, "6130503", user)
+    input_text_value(driver, "6130505", info['last-name'])
     employee = tenant.lower()
     employee = employee[:3] + '60101' + employee[3:] + '_' + user
-
-    first_name = driver.find_element_by_xpath("//input[@id='6130503']")
-    first_name.send_keys(user)
-
-    driver.find_element_by_xpath("//input[@id='6130505']").send_keys(info['last-name'])
-
-    username = driver.find_element_by_xpath("//input[@id='6130509']")
-    username.send_keys(employee)
-
-    driver.find_element_by_xpath("//input[@id='password']").send_keys(info['password'])
-    driver.find_element_by_xpath("//input[@id='password_confirm']").send_keys(info['password'])
-
-    Select(driver.find_element_by_xpath("//select[@id='17322279']")).select_by_value(info['location'])
-    Select(driver.find_element_by_xpath("//select[@id='17322280']")).select_by_value(info['role'])
-
-    expire = driver.find_element_by_xpath("//input[@id='ts_17322281']")
+    input_text_value(driver, "6130509", employee)
+    input_text_value(driver, "password", info['password'])
+    input_text_value(driver, "password_confirm", info['password'])
+    select_option(driver, "17322279", info['location'])
+    select_option(driver, "17322280", info['role'])
     now = datetime.now() + relativedelta(months=+info['expire-month'])
-    expire.send_keys(now.strftime("%m/%d/%Y"))
-
-    for access_level in info['access-level']:
-        select = driver.find_element_by_xpath(
-            "//select[@id='associatedEntityIdentifier|5101124']/option[text()='" + access_level + "']")
-        ActionChains(driver).key_down(Keys.CONTROL).click(select).key_up(Keys.CONTROL).perform()
-
-    for application in info['applications']:
-        select = driver.find_element_by_xpath(
-            "//select[@id='associatedEntityIdentifier|6240792']/option[text()='" + application + "']")
-        ActionChains(driver).key_down(Keys.CONTROL).click(select).key_up(Keys.CONTROL).perform()
-
-    Select(driver.find_element_by_xpath("//select[@id='associatedEntityIdentifier|6240793']")).select_by_visible_text(
-        info['default-application'])
-    Select(driver.find_element_by_xpath("//select[@id='associatedEntityIdentifier|7234414']")).select_by_visible_text(
-        info['home-dashboard'])
+    input_text_value(driver, "ts_17322281", now.strftime("%m/%d/%Y"))
+    select_option(driver, "associatedEntityIdentifier|5101124", info['access-level'])
+    select_option(driver, "associatedEntityIdentifier|6240792", info['applications'])
+    select_option(driver, "associatedEntityIdentifier|6240793", info['default-application'])
+    select_option(driver, "associatedEntityIdentifier|7234414", info['home-dashboard'])
 
     print(employee)
 
@@ -145,10 +119,9 @@ def create_employee(tenant, index, info, url, driver):
 
 
 def create_tenants(account, info, driver):
-    url = info['creation']['url']
-    tenant = info['creation']['tenant']
+    url = info['url']
+    tenant = info['tenant']
     driver = log_in_tenant(account, "PLATFORM ADMIN", url, driver)
-
     tenant_index = tenant['start-point']
     tenant_index_limit = tenant_index + tenant['number']
 
@@ -163,11 +136,13 @@ def create_tenants(account, info, driver):
 
 
 def create_employees(account, info, driver):
-    url = info['creation']['url']
-    tenant_index = info['creation']['tenant']['start-point']
-    tenant_index_limit = tenant_index + info['creation']['tenant']['number']
-    employee_index = info['creation']['employee']['start-point']
-    employee_amount = info['creation']['employee']['number-each-tenant']
+    url = info['url']
+    tenant_info = info['tenant']
+    tenant_index = tenant_info['start-point']
+    tenant_index_limit = tenant_index + tenant_info['number']
+    employee_info = info['employee']
+    employee_index = employee_info['start-point']
+    employee_amount = employee_info['number-each-tenant']
     i = 0
 
     while tenant_index < tenant_index_limit:
@@ -175,18 +150,20 @@ def create_employees(account, info, driver):
         driver = log_in_tenant(account, tenant_name, url, driver)
         while i < employee_amount:
             employee_index = employee_index + i
-            driver = create_employee(tenant_name, employee_index, info['creation']['employee'], url, driver)
+            driver = create_employee(tenant_name, employee_index, employee_info, url, driver)
             i += 1
         driver = log_out(url, driver)
         i = 0
         tenant_index += 1
         employee_index += 1
 
+    return driver
 
-login_account = get_file_info("./account.json")
-creation_info = get_file_info("./creation.json")
-chrome_driver = create_tenants(login_account['account']['admin'], creation_info, chrome_driver)
-create_employees(login_account['account']['admin'], creation_info, chrome_driver)
+
+admin_account = get_file_info("./account.json")['account']['admin']
+creation_info = get_file_info("./creation.json")['creation']
+chrome_driver = create_tenants(admin_account, creation_info, chrome_driver)
+chrome_driver = create_employees(admin_account, creation_info, chrome_driver)
 chrome_driver.close()
 
 time_ended = datetime.utcnow()
