@@ -4,6 +4,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from selenium import webdriver
 from selenium.webdriver import ActionChains
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
@@ -11,6 +12,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 time_started = datetime.utcnow()
 
+NEED_CREATE_TENANT = True
+NEED_CREATE_EMPLOYEE = True
 chrome_driver = webdriver.Chrome()
 
 
@@ -75,9 +78,13 @@ def create_tenant(tenant, info, url, driver):
 
     Select(driver.find_element_by_id("associatedEntityIdentifier|17429833")).select_by_visible_text(
         info['tomcat-service'])
-    driver.find_element_by_xpath("//input[@type='button'][@value='Save']").click()
 
-    wait.until(EC.title_contains("PFS | PLATFORM ACCOUNT Details"))
+    if NEED_CREATE_TENANT:
+        driver.find_element_by_xpath("//input[@type='button'][@value='Save']").click()
+        wait.until(EC.title_contains("PFS | PLATFORM ACCOUNT Details"))
+    else:
+        driver.get(url + "708646210/corelims?cmd=getall&entityType=PLATFORM%20ACCOUNT")
+        wait.until(EC.presence_of_element_located((By.ID, "gridview-1050-body")))
 
     return driver
 
@@ -127,9 +134,13 @@ def create_employee(tenant, index, info, url, driver):
 
     print(employee)
 
-    driver.find_element_by_xpath("//input[@id='overrideControlledSubmit']").click()
+    if NEED_CREATE_EMPLOYEE:
+        driver.find_element_by_xpath("//input[@id='overrideControlledSubmit']").click()
+        wait.until(EC.title_contains("PFS | EMPLOYEE Details"))
+    else:
+        driver.get(url + tenant + "/corelims?cmd=getall&entityType=EMPLOYEE")
+        wait.until(EC.presence_of_element_located((By.ID, "gridview-1060-body")))
 
-    wait.until(EC.title_contains("PFS | EMPLOYEE Details"))
     return driver
 
 
