@@ -21,9 +21,9 @@ def get_file_info(path):
     return data
 
 
-def log_in_tenant(account, tenant, driver):
+def log_in_tenant(account, tenant, url, driver):
     wait = WebDriverWait(driver, 420)
-    driver.get("http://corelimslite.thermofisher.cn/corelims")
+    driver.get(url + "corelims")
 
     username_id = driver.find_element_by_id("lims_userNameID")
     username_id.clear()
@@ -35,7 +35,7 @@ def log_in_tenant(account, tenant, driver):
 
     driver.find_element_by_id("lims_buttonID").click()
 
-    driver.get("http://corelimslite.thermofisher.cn/login")
+    driver.get(url + "login")
 
     select_tenant = Select(driver.find_element_by_xpath("//select[@name='tenantSelect']"))
     select_tenant.select_by_visible_text(tenant)
@@ -46,20 +46,19 @@ def log_in_tenant(account, tenant, driver):
     return driver
 
 
-def log_out(driver):
+def log_out(url, driver):
     wait = WebDriverWait(driver, 420)
-    driver.get("http://corelimslite.thermofisher.cn/login?cmd=logout&entityType=LIMS")
+    driver.get(url + "login?cmd=logout&entityType=LIMS")
 
     wait.until(EC.title_contains("PFS | Login"))
 
     return driver
 
 
-def create_tenant(tenant, info, driver):
+def create_tenant(tenant, info, url, driver):
     wait = WebDriverWait(driver, 420)
 
-    driver.get(
-        "http://corelimslite.thermofisher.cn/708646210/corelims?cmd=clone&entityType=PLATFORM%20ACCOUNT&entityId=17437965")
+    driver.get(url + "708646210/corelims?cmd=clone&entityType=PLATFORM%20ACCOUNT&entityId=17437965")
 
     input_name = driver.find_element_by_id("name")
     input_name.send_keys(tenant)
@@ -83,12 +82,10 @@ def create_tenant(tenant, info, driver):
     return driver
 
 
-def create_employee(tenant, index, info, driver):
+def create_employee(tenant, index, info, url, driver):
     wait = WebDriverWait(driver, 420)
 
-    driver.get(
-        "http://corelimslite.thermofisher.cn/" +
-        tenant + "/corelims?cmd=new&entityType=EMPLOYEE&superType=EMPLOYEE")
+    driver.get(url + tenant + "/corelims?cmd=new&entityType=EMPLOYEE&superType=EMPLOYEE")
     wait.until(EC.title_contains("PFS | Create New EMPLOYEE"))
 
     user = 'user' + str(index)
@@ -137,22 +134,25 @@ def create_employee(tenant, index, info, driver):
 
 
 def create_tenants(account, info, driver):
-    driver = log_in_tenant(account, "PLATFORM ADMIN", driver)
+    url = info['creation']['url']
+    tenant = info['creation']['tenant']
+    driver = log_in_tenant(account, "PLATFORM ADMIN", url, driver)
 
-    tenant_index = info['start-point']
-    tenant_index_limit = tenant_index + info['number']
+    tenant_index = tenant['start-point']
+    tenant_index_limit = tenant_index + tenant['number']
 
     while tenant_index < tenant_index_limit:
         tenant_name = "CLX" + str(tenant_index)
-        driver = create_tenant(tenant_name, info, driver)
+        driver = create_tenant(tenant_name, tenant, url, driver)
         tenant_index += 1
 
-    driver = log_out(driver)
+    driver = log_out(url, driver)
 
     return driver
 
 
 def create_employees(account, info, driver):
+    url = info['creation']['url']
     tenant_index = info['creation']['tenant']['start-point']
     tenant_index_limit = tenant_index + info['creation']['tenant']['number']
     employee_index = info['creation']['employee']['start-point']
@@ -161,12 +161,12 @@ def create_employees(account, info, driver):
 
     while tenant_index < tenant_index_limit:
         tenant_name = "CLX" + str(tenant_index)
-        driver = log_in_tenant(account, tenant_name, driver)
+        driver = log_in_tenant(account, tenant_name, url, driver)
         while i < employee_amount:
             employee_index = employee_index + i
-            driver = create_employee(tenant_name, employee_index, info['creation']['employee'], driver)
+            driver = create_employee(tenant_name, employee_index, info['creation']['employee'], url, driver)
             i += 1
-        driver = log_out(driver)
+        driver = log_out(url, driver)
         i = 0
         tenant_index += 1
         employee_index += 1
@@ -174,7 +174,7 @@ def create_employees(account, info, driver):
 
 login_account = get_file_info("./account.json")
 creation_info = get_file_info("./creation.json")
-chrome_driver = create_tenants(login_account['account']['admin'], creation_info['creation']['tenant'], chrome_driver)
+chrome_driver = create_tenants(login_account['account']['admin'], creation_info, chrome_driver)
 create_employees(login_account['account']['admin'], creation_info, chrome_driver)
 chrome_driver.close()
 
