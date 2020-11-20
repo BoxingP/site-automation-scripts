@@ -1,0 +1,19 @@
+{
+  "copy": {
+    "url": "http://corelimslite.thermofisher.cn/",
+    "base": {
+      "flag": "_01",
+      "named-users": 100,
+      "base-account-barcode": "@CI_LOOPBACK",
+      "tomcat-service": [
+        "tomcat service"
+      ]
+    },
+    "tenants": [
+      {
+        "name": "CLX141",
+        "code": "ACT146"
+      }
+    ]
+  }
+}
