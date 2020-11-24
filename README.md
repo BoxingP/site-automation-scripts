@@ -1,4 +1,4 @@
-LIMS Scripts
+Site Scripts
 ===
 
 Scripts to free people from the manual workings which are annoying and repetitive.

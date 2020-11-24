@@ -1,0 +1,69 @@
+{
+  "creation": {
+    "base": {
+      "flag": "",
+      "named-users": 100,
+      "base-account-barcode": "@CI_LOOPBACK",
+      "tomcat-service": [
+        "tomcat service"
+      ]
+    },
+    "tenant": {
+      "name": "CLX",
+      "start-point": 263,
+      "number": 2,
+      "source_schema": "ACT3"
+    },
+    "employee": {
+      "start-point": 525,
+      "number-each-tenant": 2,
+      "last-name": "",
+      "password": "",
+      "location": [
+        "上海"
+      ],
+      "role": [
+        "系统管理员"
+      ],
+      "expire-month": 3,
+      "access-level": [
+        "DATA GENERATOR",
+        "DATA VIEWER",
+        "DEFAULT",
+        "VIEW-ALL"
+      ],
+      "applications": [
+        "bex_batch_material_usage_query_application",
+        "bex_consumable_lowlimit_report_application",
+        "bex_consumable_management_application",
+        "bex_consumable_receive_management_application",
+        "bex_homepage",
+        "bex_inventory_check_application",
+        "bex_inventory_query_application",
+        "bex_location_management_application",
+        "bex_qa_review_mgmt_application",
+        "bex_sample_disposal_request_mgmt_application",
+        "bex_sample_disposal_request_review_application",
+        "bex_sample_receive_management_application",
+        "bex_sample_registration_mgmt_application",
+        "bex_sample_report_mgmt_application",
+        "bex_sample_source_mgmt_application",
+        "bex_samplebatch_usage_query_application",
+        "bex_stock_in_confirmation_management_application",
+        "bex_stock_in_request_review_application",
+        "bex_stock_in_request_submission_application",
+        "bex_stock_out_confirmation_management_application",
+        "bex_stock_out_request_review_application",
+        "bex_stock_out_request_submission_application",
+        "bex_validity_period_management_application",
+        "ci_app_eln"
+      ],
+      "default-application": [
+        "bex_homepage"
+      ],
+      "home-dashboard": [
+        "bex_homepage_dashboard"
+      ]
+    }
+  }
+}

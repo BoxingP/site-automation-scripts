@@ -1,0 +1,12 @@
+{
+  "url": {
+    "domain": "",
+    "main": "",
+    "login": "",
+    "logout": "",
+    "create-tenant": "",
+    "list-tenant": "",
+    "create-employee": "",
+    "list-employee": ""
+  }
+}

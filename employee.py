@@ -11,7 +11,7 @@ from page import input_text_value, select_option
 def create_employee(tenant, index, info, url, driver, need_create_employee=False):
     wait = WebDriverWait(driver, 420)
 
-    driver.get(url + tenant + "/corelims?cmd=new&entityType=EMPLOYEE&superType=EMPLOYEE")
+    driver.get(url['domain'] + tenant + url['create-employee'])
     wait.until(EC.title_contains("PFS | Create New EMPLOYEE"))
 
     user = 'user' + str(index)
@@ -37,7 +37,7 @@ def create_employee(tenant, index, info, url, driver, need_create_employee=False
         driver.find_element_by_xpath("//input[@id='overrideControlledSubmit']").click()
         wait.until(EC.title_contains("PFS | EMPLOYEE Details"))
     else:
-        driver.get(url + tenant + "/corelims?cmd=getall&entityType=EMPLOYEE")
+        driver.get(url['domain'] + tenant + url['list-employee'])
         wait.until(EC.presence_of_element_located((By.ID, "gridview-1060-body")))
 
     return driver

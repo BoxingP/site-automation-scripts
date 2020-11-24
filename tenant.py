@@ -8,7 +8,7 @@ from page import input_text_value, select_option
 def create_tenant(tenant, url, driver, need_create_tenant=False):
     wait = WebDriverWait(driver, 420)
 
-    driver.get(url + "708646210/corelims?cmd=clone&entityType=PLATFORM%20ACCOUNT&entityId=17437965")
+    driver.get(url['domain'] + url['create-tenant'])
 
     input_text_value(driver, "name", tenant['name'])
     input_text_value(driver, "17429590", tenant['named-users'])
@@ -16,11 +16,13 @@ def create_tenant(tenant, url, driver, need_create_tenant=False):
     input_text_value(driver, "17429593", tenant['name'])
     select_option(driver, "associatedEntityIdentifier|17429833", tenant['tomcat-service'])
 
+    print(tenant['name'])
+
     if need_create_tenant:
         driver.find_element_by_xpath("//input[@type='button'][@value='Save']").click()
         wait.until(EC.title_contains("PFS | PLATFORM ACCOUNT Details"))
     else:
-        driver.get(url + "708646210/corelims?cmd=getall&entityType=PLATFORM%20ACCOUNT")
+        driver.get(url['domain'] + url['list-tenant'])
         wait.until(EC.presence_of_element_located((By.ID, "gridview-1050-body")))
 
     return driver

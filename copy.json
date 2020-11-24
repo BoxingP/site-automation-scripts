@@ -1,6 +1,5 @@
 {
   "copy": {
-    "url": "http://corelimslite.thermofisher.cn/",
     "base": {
       "flag": "_01",
       "named-users": 100,

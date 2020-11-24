@@ -8,17 +8,16 @@ from info import load_config
 from tenant import create_tenant, generate_tenant_info
 
 
-def create_tenants(account, info, driver, need_create_tenant=False):
-    url = info['url']
+def create_tenants(account, info, url, driver, need_create_tenant=False):
     tenant = info['tenant']
-    tenant_name = tenant['name']
-    driver = log_in(account, "PLATFORM ADMIN", url, driver)
+    tenant_name_prefix = tenant['name']
+    driver = log_in(account, account['tenant'], url, driver)
     tenant_index = tenant['start-point']
     tenant_index_limit = tenant_index + tenant['number']
 
     while tenant_index < tenant_index_limit:
-        tenant['name'] = tenant_name + str(tenant_index)
-        tenant = generate_tenant_info(tenant, info['base'])
+        current_tenant = {'name': tenant_name_prefix + str(tenant_index), 'source_schema': tenant['source_schema']}
+        tenant = generate_tenant_info(current_tenant, info['base'])
         driver = create_tenant(tenant, url, driver, need_create_tenant)
         tenant_index += 1
 
@@ -27,9 +26,9 @@ def create_tenants(account, info, driver, need_create_tenant=False):
     return driver
 
 
-def create_employees(account, info, driver, need_create_employee=False):
-    url = info['url']
+def create_employees(account, info, url, driver, need_create_employee=False):
     tenant_info = info['tenant']
+    tenant_name_prefix = tenant_info['name']
     tenant_index = tenant_info['start-point']
     tenant_index_limit = tenant_index + tenant_info['number']
     employee_info = info['employee']
@@ -38,7 +37,7 @@ def create_employees(account, info, driver, need_create_employee=False):
     i = 0
 
     while tenant_index < tenant_index_limit:
-        tenant_name = "CLX" + str(tenant_index)
+        tenant_name = tenant_name_prefix + str(tenant_index)
         driver = log_in(account, tenant_name, url, driver)
         while i < employee_amount:
             employee_index = employee_index + i
@@ -57,8 +56,9 @@ time_started = datetime.utcnow()
 chrome_driver = webdriver.Chrome()
 admin_account = load_config("./account.json")['account']['admin']
 creation_info = load_config("./creation.json")['creation']
-chrome_driver = create_tenants(admin_account, creation_info, chrome_driver, True)
-chrome_driver = create_employees(admin_account, creation_info, chrome_driver, True)
+site_url = load_config("./url.json")['url']
+chrome_driver = create_tenants(admin_account, creation_info, site_url, chrome_driver, True)
+chrome_driver = create_employees(admin_account, creation_info, site_url, chrome_driver, True)
 chrome_driver.close()
 
 time_ended = datetime.utcnow()
