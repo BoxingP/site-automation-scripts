@@ -1,3 +1,4 @@
 .idea/
 CreateTenantAndEmployee.iml
 debug.log
+*.pyc

@@ -1,133 +1,25 @@
-import json
 from datetime import datetime
 
-from dateutil.relativedelta import relativedelta
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.wait import WebDriverWait
 
-time_started = datetime.utcnow()
-
-NEED_CREATE_TENANT = True
-NEED_CREATE_EMPLOYEE = True
-chrome_driver = webdriver.Chrome()
+from account import log_in, log_out
+from employee import create_employee
+from info import load_config
+from tenant import create_tenant, generate_tenant_info
 
 
-def input_text_value(driver, select, info):
-    textbox = driver.find_element_by_xpath("//*[@id='" + select + "']")
-    textbox.send_keys(Keys.CONTROL + "a")
-    textbox.send_keys(Keys.BACK_SPACE)
-    textbox.send_keys(info)
-
-
-def select_option(driver, select, info):
-    for option in info:
-        Select(driver.find_element_by_xpath("//select[@id='" + select + "']")).select_by_visible_text(option)
-
-
-def get_file_info(path):
-    file = open(path, 'r', encoding='UTF-8')
-    data = json.load(file)
-    file.close()
-    return data
-
-
-def log_in_tenant(account, tenant, url, driver):
-    wait = WebDriverWait(driver, 420)
-    driver.get(url + "corelims")
-
-    input_text_value(driver, "lims_userNameID", account["username"])
-    input_text_value(driver, "lims_passwordID", account["password"])
-    driver.find_element_by_id("lims_buttonID").click()
-
-    driver.get(url + "login")
-
-    select_tenant = Select(driver.find_element_by_xpath("//select[@name='tenantSelect']"))
-    select_tenant.select_by_visible_text(tenant)
-    driver.find_element_by_xpath("//input[@name='submit'][@type='submit']").click()
-
-    wait.until(EC.title_contains("PFS | Home"))
-
-    return driver
-
-
-def log_out(url, driver):
-    wait = WebDriverWait(driver, 420)
-    driver.get(url + "login?cmd=logout&entityType=LIMS")
-
-    wait.until(EC.title_contains("PFS | Login"))
-
-    return driver
-
-
-def create_tenant(tenant, info, url, driver):
-    wait = WebDriverWait(driver, 420)
-
-    driver.get(url + "708646210/corelims?cmd=clone&entityType=PLATFORM%20ACCOUNT&entityId=17437965")
-
-    input_text_value(driver, "name", tenant)
-    input_text_value(driver, "17429591", info['base-account-barcode'])
-    input_text_value(driver, "17429593", tenant)
-    select_option(driver, "associatedEntityIdentifier|17429833", info['tomcat-service'])
-
-    if NEED_CREATE_TENANT:
-        driver.find_element_by_xpath("//input[@type='button'][@value='Save']").click()
-        wait.until(EC.title_contains("PFS | PLATFORM ACCOUNT Details"))
-    else:
-        driver.get(url + "708646210/corelims?cmd=getall&entityType=PLATFORM%20ACCOUNT")
-        wait.until(EC.presence_of_element_located((By.ID, "gridview-1050-body")))
-
-    return driver
-
-
-def create_employee(tenant, index, info, url, driver):
-    wait = WebDriverWait(driver, 420)
-
-    driver.get(url + tenant + "/corelims?cmd=new&entityType=EMPLOYEE&superType=EMPLOYEE")
-    wait.until(EC.title_contains("PFS | Create New EMPLOYEE"))
-
-    user = 'user' + str(index)
-    input_text_value(driver, "6130503", user)
-    input_text_value(driver, "6130505", info['last-name'])
-    employee = tenant.lower()
-    employee = employee[:3] + '60101' + employee[3:] + '_' + user
-    input_text_value(driver, "6130509", employee)
-    input_text_value(driver, "password", info['password'])
-    input_text_value(driver, "password_confirm", info['password'])
-    select_option(driver, "17322279", info['location'])
-    select_option(driver, "17322280", info['role'])
-    now = datetime.now() + relativedelta(months=+info['expire-month'])
-    input_text_value(driver, "ts_17322281", now.strftime("%m/%d/%Y"))
-    select_option(driver, "associatedEntityIdentifier|5101124", info['access-level'])
-    select_option(driver, "associatedEntityIdentifier|6240792", info['applications'])
-    select_option(driver, "associatedEntityIdentifier|6240793", info['default-application'])
-    select_option(driver, "associatedEntityIdentifier|7234414", info['home-dashboard'])
-
-    print(employee)
-
-    if NEED_CREATE_EMPLOYEE:
-        driver.find_element_by_xpath("//input[@id='overrideControlledSubmit']").click()
-        wait.until(EC.title_contains("PFS | EMPLOYEE Details"))
-    else:
-        driver.get(url + tenant + "/corelims?cmd=getall&entityType=EMPLOYEE")
-        wait.until(EC.presence_of_element_located((By.ID, "gridview-1060-body")))
-
-    return driver
-
-
-def create_tenants(account, info, driver):
+def create_tenants(account, info, driver, need_create_tenant=False):
     url = info['url']
     tenant = info['tenant']
-    driver = log_in_tenant(account, "PLATFORM ADMIN", url, driver)
+    tenant_name = tenant['name']
+    driver = log_in(account, "PLATFORM ADMIN", url, driver)
     tenant_index = tenant['start-point']
     tenant_index_limit = tenant_index + tenant['number']
 
     while tenant_index < tenant_index_limit:
-        tenant_name = "CLX" + str(tenant_index)
-        driver = create_tenant(tenant_name, tenant, url, driver)
+        tenant['name'] = tenant_name + str(tenant_index)
+        tenant = generate_tenant_info(tenant, info['base'])
+        driver = create_tenant(tenant, url, driver, need_create_tenant)
         tenant_index += 1
 
     driver = log_out(url, driver)
@@ -135,7 +27,7 @@ def create_tenants(account, info, driver):
     return driver
 
 
-def create_employees(account, info, driver):
+def create_employees(account, info, driver, need_create_employee=False):
     url = info['url']
     tenant_info = info['tenant']
     tenant_index = tenant_info['start-point']
@@ -147,10 +39,10 @@ def create_employees(account, info, driver):
 
     while tenant_index < tenant_index_limit:
         tenant_name = "CLX" + str(tenant_index)
-        driver = log_in_tenant(account, tenant_name, url, driver)
+        driver = log_in(account, tenant_name, url, driver)
         while i < employee_amount:
             employee_index = employee_index + i
-            driver = create_employee(tenant_name, employee_index, employee_info, url, driver)
+            driver = create_employee(tenant_name, employee_index, employee_info, url, driver, need_create_employee)
             i += 1
         driver = log_out(url, driver)
         i = 0
@@ -160,10 +52,13 @@ def create_employees(account, info, driver):
     return driver
 
 
-admin_account = get_file_info("./account.json")['account']['admin']
-creation_info = get_file_info("./creation.json")['creation']
-chrome_driver = create_tenants(admin_account, creation_info, chrome_driver)
-chrome_driver = create_employees(admin_account, creation_info, chrome_driver)
+time_started = datetime.utcnow()
+
+chrome_driver = webdriver.Chrome()
+admin_account = load_config("./account.json")['account']['admin']
+creation_info = load_config("./creation.json")['creation']
+chrome_driver = create_tenants(admin_account, creation_info, chrome_driver, True)
+chrome_driver = create_employees(admin_account, creation_info, chrome_driver, True)
 chrome_driver.close()
 
 time_ended = datetime.utcnow()

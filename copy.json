@@ -12,7 +12,11 @@
     "tenants": [
       {
         "name": "CLX141",
-        "code": "ACT146"
+        "source_schema": "ACT146"
+      },
+      {
+        "name": "CLX267",
+        "source_schema": "ACT291"
       }
     ]
   }
