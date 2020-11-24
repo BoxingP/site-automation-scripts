@@ -1,4 +1,5 @@
 from datetime import datetime
+from time import sleep
 
 from dateutil.relativedelta import relativedelta
 from selenium.webdriver.common.by import By
@@ -39,5 +40,33 @@ def create_employee(tenant, index, info, url, driver, need_create_employee=False
     else:
         driver.get(url['domain'] + tenant + url['list-employee'])
         wait.until(EC.presence_of_element_located((By.ID, "gridview-1060-body")))
+
+    return driver
+
+
+def inactive_employee(employee, url, driver, need_inactive_employee=False):
+    wait = WebDriverWait(driver, 420)
+
+    driver.get(url['domain'] + employee['tenant'] + url['list-employee'])
+    sleep(3)
+
+    if employee['name'] in driver.page_source:
+        record_id = driver.find_element_by_xpath("//*[contains(text(), '" + employee['name'] + "')]").find_element_by_xpath(
+            '..').find_element_by_xpath('..').get_attribute('data-recordid')
+        driver.get(url['domain'] + employee['tenant'] + url['edit-employee'] + record_id)
+        if driver.find_element_by_xpath("//input[@name='active'][@type='checkbox']").get_attribute('checked'):
+            driver.find_element_by_xpath("//input[@name='active'][@type='checkbox']").click()
+            if need_inactive_employee:
+                driver.find_element_by_xpath("//input[@id='overrideControlledSubmit']").click()
+                wait.until(EC.title_contains("PFS | EMPLOYEE Details"))
+            else:
+                print("Abandon to inactive: %s" % employee['name'])
+                return driver
+        else:
+            print("%s is already inactive." % employee['name'])
+            return driver
+    else:
+        print("%s doesn't exist!" % employee['name'])
+        return driver
 
     return driver
