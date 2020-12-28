@@ -1,3 +1,5 @@
+import random
+import string
 from datetime import datetime
 from time import sleep
 
@@ -7,6 +9,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from page import input_text_value, select_option
+
+
+def generate_password(letters=string.ascii_letters, digits=string.digits, punctuation=string.punctuation, N=16):
+    letters = ''.join(random.choice(letters) for _ in range(N//2))
+    digits = ''.join(random.choice(digits) for _ in range(N-N//2-2))
+    punctuation = ''.join(random.choice(punctuation) for _ in range(2))
+    password = list(letters + digits + punctuation)
+    random.shuffle(password)
+    return ''.join(password)
 
 
 def create_employee(tenant, index, info, url, driver, need_create_employee=False):
@@ -21,8 +32,9 @@ def create_employee(tenant, index, info, url, driver, need_create_employee=False
     employee = tenant.lower()
     employee = employee[:3] + '60101' + employee[3:] + '_' + user
     input_text_value(driver, "6130509", employee)
-    input_text_value(driver, "password", info['password'])
-    input_text_value(driver, "password_confirm", info['password'])
+    password = generate_password()
+    input_text_value(driver, "password", password)
+    input_text_value(driver, "password_confirm", password)
     select_option(driver, "17322279", info['location'])
     select_option(driver, "17322280", info['role'])
     now = datetime.now() + relativedelta(months=+info['expire-month'])
@@ -33,6 +45,7 @@ def create_employee(tenant, index, info, url, driver, need_create_employee=False
     select_option(driver, "associatedEntityIdentifier|7234414", info['home-dashboard'])
 
     print(employee)
+    print(password)
 
     if need_create_employee:
         driver.find_element_by_xpath("//input[@id='overrideControlledSubmit']").click()
