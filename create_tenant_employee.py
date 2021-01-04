@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pandas as pd
 from selenium import webdriver
 
 from account import log_in, log_out
@@ -8,7 +9,7 @@ from info import load_config
 from tenant import create_tenant, generate_tenant_info
 
 
-def create_tenants(account, info, url, driver, need_create_tenant=False):
+def create_tenants(account, info, url, driver, result, need_create_tenant=False):
     tenant = info['tenant']
     tenant_name_prefix = tenant['name']
     driver = log_in(account, account['tenant'], url, driver)
@@ -18,15 +19,15 @@ def create_tenants(account, info, url, driver, need_create_tenant=False):
     while tenant_index < tenant_index_limit:
         current_tenant = {'name': tenant_name_prefix + str(tenant_index), 'source_schema': tenant['source_schema']}
         tenant = generate_tenant_info(current_tenant, info['base'])
-        driver = create_tenant(tenant, url, driver, need_create_tenant)
+        driver, result = create_tenant(tenant, url, driver, result, need_create_tenant)
         tenant_index += 1
 
     driver = log_out(url, driver)
 
-    return driver
+    return driver, result
 
 
-def create_employees(account, info, url, driver, need_create_employee=False):
+def create_employees(account, info, url, driver, result, need_create_employee=False):
     tenant_info = info['tenant']
     tenant_name_prefix = tenant_info['name']
     tenant_index = tenant_info['start-point']
@@ -41,25 +42,31 @@ def create_employees(account, info, url, driver, need_create_employee=False):
         driver = log_in(account, tenant_name, url, driver)
         while i < employee_amount:
             employee_index = employee_index + i
-            driver = create_employee(tenant_name, employee_index, employee_info, url, driver, need_create_employee)
+            driver, result = create_employee(tenant_name, employee_index, employee_info, url, driver, result,
+                                             need_create_employee)
             i += 1
         driver = log_out(url, driver)
         i = 0
         tenant_index += 1
         employee_index += 1
 
-    return driver
+    return driver, result
 
 
 time_started = datetime.utcnow()
 
+creation_result = pd.DataFrame(columns=['tenant', 'barcode', 'employee', 'password'])
 chrome_driver = webdriver.Chrome()
 admin_account = load_config("./account.json")['account']['admin']
 creation_info = load_config("./creation.json")['creation']
 site_url = load_config("./url.json")['url']
-chrome_driver = create_tenants(admin_account, creation_info, site_url, chrome_driver, True)
-chrome_driver = create_employees(admin_account, creation_info, site_url, chrome_driver, True)
+chrome_driver, creation_result = create_tenants(admin_account, creation_info, site_url, chrome_driver, creation_result,
+                                                True)
+chrome_driver, creation_result = create_employees(admin_account, creation_info, site_url, chrome_driver,
+                                                  creation_result, True)
 chrome_driver.close()
+with pd.ExcelWriter('creation_result.xlsx', mode='w') as writer:
+    creation_result.to_excel(writer, sheet_name='creation_results')
 
 time_ended = datetime.utcnow()
 total_time = (time_ended - time_started).total_seconds()

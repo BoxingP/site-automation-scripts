@@ -12,15 +12,26 @@ from page import input_text_value, select_option
 
 
 def generate_password(letters=string.ascii_letters, digits=string.digits, punctuation=string.punctuation, N=16):
-    letters = ''.join(random.choice(letters) for _ in range(N//2))
-    digits = ''.join(random.choice(digits) for _ in range(N-N//2-2))
+    letters = ''.join(random.choice(letters) for _ in range(N // 2))
+    digits = ''.join(random.choice(digits) for _ in range(N - N // 2 - 2))
     punctuation = ''.join(random.choice(punctuation) for _ in range(2))
     password = list(letters + digits + punctuation)
     random.shuffle(password)
     return ''.join(password)
 
 
-def create_employee(tenant, index, info, url, driver, need_create_employee=False):
+def update_employee_info(result, tenant, info, value):
+    origin_value = result.loc[result['tenant'] == tenant, info].item()
+    if origin_value != origin_value:
+        value_list = ['', value]
+    else:
+        value_list = [origin_value, value]
+    values = ','.join(filter(None, value_list))
+    result.loc[(result['tenant'] == tenant), info] = values
+    return result
+
+
+def create_employee(tenant, index, info, url, driver, result, need_create_employee=False):
     wait = WebDriverWait(driver, 420)
 
     driver.get(url['domain'] + tenant + url['create-employee'])
@@ -50,11 +61,13 @@ def create_employee(tenant, index, info, url, driver, need_create_employee=False
     if need_create_employee:
         driver.find_element_by_xpath("//input[@id='overrideControlledSubmit']").click()
         wait.until(EC.title_contains("PFS | EMPLOYEE Details"))
+        result = update_employee_info(result, tenant, 'employee', employee)
+        result = update_employee_info(result, tenant, 'password', password)
     else:
         driver.get(url['domain'] + tenant + url['list-employee'])
         wait.until(EC.presence_of_element_located((By.ID, "gridview-1060-body")))
 
-    return driver
+    return driver, result
 
 
 def inactive_employee(employee, url, driver, need_inactive_employee=False):
@@ -64,7 +77,8 @@ def inactive_employee(employee, url, driver, need_inactive_employee=False):
     sleep(3)
 
     if employee['name'] in driver.page_source:
-        record_id = driver.find_element_by_xpath("//*[contains(text(), '" + employee['name'] + "')]").find_element_by_xpath(
+        record_id = driver.find_element_by_xpath(
+            "//*[contains(text(), '" + employee['name'] + "')]").find_element_by_xpath(
             '..').find_element_by_xpath('..').get_attribute('data-recordid')
         driver.get(url['domain'] + employee['tenant'] + url['edit-employee'] + record_id)
         if driver.find_element_by_xpath("//input[@name='active'][@type='checkbox']").get_attribute('checked'):
