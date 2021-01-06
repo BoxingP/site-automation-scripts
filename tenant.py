@@ -11,7 +11,7 @@ def get_tenant_barcode(driver):
 
 
 def create_tenant(tenant, url, driver, result, need_create_tenant=False):
-    wait = WebDriverWait(driver, 420)
+    wait = WebDriverWait(driver, 540)
 
     driver.get(url['domain'] + url['create-tenant'])
 

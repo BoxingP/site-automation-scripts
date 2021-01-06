@@ -11,7 +11,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from page import input_text_value, select_option
 
 
-def generate_password(letters=string.ascii_letters, digits=string.digits, punctuation=string.punctuation, N=16):
+def generate_password(letters=string.ascii_letters, digits=string.digits,
+                      punctuation=string.punctuation.replace(",", ""), N=16):
     letters = ''.join(random.choice(letters) for _ in range(N // 2))
     digits = ''.join(random.choice(digits) for _ in range(N - N // 2 - 2))
     punctuation = ''.join(random.choice(punctuation) for _ in range(2))

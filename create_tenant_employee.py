@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 from selenium import webdriver
 
@@ -65,6 +66,8 @@ chrome_driver, creation_result = create_tenants(admin_account, creation_info, si
 chrome_driver, creation_result = create_employees(admin_account, creation_info, site_url, chrome_driver,
                                                   creation_result, True)
 chrome_driver.close()
+creation_result = creation_result.set_index(['tenant', 'barcode']).apply(lambda x: x.str.split(',').explode()).reset_index()
+creation_result.index = np.arange(1, len(creation_result) + 1)
 with pd.ExcelWriter('creation_result.xlsx', mode='w') as writer:
     creation_result.to_excel(writer, sheet_name='creation_results')
 
